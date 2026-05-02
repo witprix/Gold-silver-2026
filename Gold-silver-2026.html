@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Expense Tracker Pro - Fixed</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #0f172a;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --weight: #8b5cf6;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: var(--bg); margin: 0; padding-bottom: 100px; 
+            color: #1e293b;
+        }
+
+        /* STICKY TOP DASHBOARD */
+        .top-dash {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--secondary); color: white;
+            padding: 12px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .total-box { text-align: right; }
+        .total-box.left-align { text-align: left; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 20px; }
+        
+        .label-text { font-size: 10px; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;}
+        .inr-text { font-size: 1.4rem; font-weight: 800; color: var(--success); display: block; }
+        .gram-text { font-size: 1.4rem; font-weight: 800; color: var(--weight); display: block; }
+        .usd-text { font-size: 0.8rem; color: #94a3b8; font-weight: 600; }
+
+        .container { max-width: 1200px; margin: 15px auto; padding: 0 12px; }
+
+        /* YEAR & RATE BAR */
+        .filter-row { 
+            margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;
+            background: white; padding: 10px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        select { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 14px; outline: none; }
+        #rateLabel { font-size: 11px; font-weight: 800; color: var(--primary); }
+
+        /* ITEM CARDS - RESTORED FIELDS */
+        .expense-list { display: flex; flex-direction: column; gap: 12px; }
+        .item-card {
+            background: var(--card); border-radius: 12px; padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        .full-width { grid-column: span 2; }
+        
+        label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; }
+        input:focus { border-color: var(--primary); }
+
+        /* DISCOUNT CALCULATION AREA */
+        .calc-display { margin-top: 8px; font-size: 12px; font-weight: 700; line-height: 1.4; }
+        .net-val { color: var(--success); display: block; }
+        .diff-val { color: var(--danger); font-size: 11px; display: block; }
+
+        /* BOTTOM STICKY BAR */
+        .bottom-actions {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; padding: 15px 20px;
+            display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1); z-index: 1000;
+        }
+
+        .btn { border: none; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; color: #475569; }
+        .btn-main { background: var(--primary); color: white; padding: 12px 28px; border-radius: 50px; flex-direction: row; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .view-link { background: var(--accent); color: white; padding: 8px; border-radius: 8px; text-align: center; font-size: 11px; font-weight: 800; cursor: pointer; margin-top: 5px; display: block; text-decoration: none; }
+
+        /* Desktop Layout - All fields in one row */
+        @media (min-width: 850px) {
+            .item-card { grid-template-columns: 1.2fr 2fr 0.8fr 1.2fr 1.2fr 1.5fr; align-items: start; }
+            .full-width { grid-column: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-dash">
+    <div class="total-box left-align">
+        <span class="label-text">TOTAL GRAMS</span>
+        <span class="gram-text" id="totalGram">0g</span>
+    </div>
+    
+    <div class="total-box">
+        <span class="label-text">TOTAL NET COST</span>
+        <span class="inr-text" id="totalINR">₹0.00</span>
+        <span class="usd-text" id="totalUSD">$0.00 USD</span>
+    </div>
+</div>
+
+<div class="container">
+    <div class="filter-row">
+        <div>
+            <label class="label-text" style="color:#64748b">Filter Year</label>
+            <select id="yearFilter" onchange="refresh()"></select>
+        </div>
+        <div id="rateLabel">Live Rate: Loading...</div>
+    </div>
+
+    <div id="expenseList" class="expense-list"></div>
+</div>
+
+<div class="bottom-actions">
+    <button class="btn" onclick="document.getElementById('importFile').click()">
+        <span>📥</span><span>Import</span>
+    </button>
+    <button class="btn btn-main" onclick="addNew()">
+        <span>＋</span><span>Add Record</span>
+    </button>
+    <button class="btn" onclick="exportData()">
+        <span>📤</span><span>Export</span>
+    </button>
+</div>
+
+<input type="file" id="importFile" hidden accept=".json" onchange="importData(event)">
+
+<script>
+    const DB_KEY = "Tracker_Final_AllFields_V19";
+    let LIVE_RATE = 0.012; 
+
+    async function getRate() {
+        try {
+            const r = await fetch('https://open.er-api.com/v6/latest/INR');
+            const d = await r.json();
+            if(d?.rates?.USD) {
+                LIVE_RATE = d.rates.USD;
+                document.getElementById('rateLabel').innerText = `1 USD = ₹${(1/LIVE_RATE).toFixed(2)}`;
+                refresh();
+            }
+        } catch(e) { document.getElementById('rateLabel').innerText = "Offline Mode"; }
+    }
+
+    // Setup Year Filter
+    const yf = document.getElementById('yearFilter');
+    const cy = new Date().getFullYear();
+    for(let i=cy-5; i<=cy+5; i++) {
+        let o = document.createElement('option'); o.value = i; o.innerText = i;
+        if(i === cy) o.selected = true;
+        yf.appendChild(o);
+    }
+
+    function init() {
+        const saved = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        document.getElementById('expenseList').innerHTML = "";
+        if(saved.length === 0) addNew();
+        else saved.forEach(s => addNew(s));
+        getRate();
+    }
+
+    function addNew(data = {}) {
+        const div = document.createElement('div');
+        div.className = "item-card";
+        div.innerHTML = `
+            <div>
+                <label>Date</label>
+                <input type="date" class="d-date" value="${data.date || ''}" onchange="refresh(); save();">
+            </div>
+            <div class="full-width">
+                <label>Description</label>
+                <input type="text" class="d-item" value="${data.item || ''}" placeholder="Item details..." oninput="save();">
+            </div>
+            <div>
+                <label>Gram (g)</label>
+                <input type="number" class="d-gram" value="${data.gram || ''}" placeholder="0" oninput="refresh(); save();">
+            </div>
+            <div>
+                <label>Actual Price (₹)</label>
+                <input type="number" class="d-price" value="${data.price || ''}" placeholder="0.00" oninput="refresh(); save();">
+            </div>
+            <div>
+                <label>Disc %</label>
+                <input type="number" class="d-disc" value="${data.disc || ''}" placeholder="0" oninput="refresh(); save();">
+                <div class="calc-display">
+                    <span class="net-val"></span>
+                    <span class="diff-val"></span>
+                </div>
+            </div>
+            <div>
+                <label>Invoice</label>
+                <input type="file" onchange="upFile(this)" style="font-size: 10px; width:100%;">
+                <input type="hidden" class="d-file" value="${data.file || ''}">
+                <div class="btn-zone">${data.file ? `<div class="view-link" onclick="showInv('${data.file}')">View File</div>` : ''}</div>
+            </div>
+        `;
+        document.getElementById('expenseList').appendChild(div);
+    }
+
+    function upFile(el) {
+        const r = new FileReader();
+        r.onload = (e) => {
+            const base64 = e.target.result;
+            el.parentElement.querySelector('.d-file').value = base64;
+            el.parentElement.querySelector('.btn-zone').innerHTML = `<div class="view-link" onclick="showInv('${base64}')">View File</div>`;
+            save();
+        };
+        if(el.files[0]) r.readAsDataURL(el.files[0]);
+    }
+
+    function showInv(src) {
+        const w = window.open();
+        w.document.write(`<iframe src="${src}" frameborder="0" style="width:100%; height:100%; border:none;"></iframe>`);
+    }
+
+    function refresh() {
+        const year = document.getElementById('yearFilter').value;
+        let totalINR = 0;
+        let totalGram = 0;
+
+        document.querySelectorAll('.item-card').forEach(card => {
+            const dt = card.querySelector('.d-date').value;
+            const g = parseFloat(card.querySelector('.d-gram').value) || 0;
+            const p = parseFloat(card.querySelector('.d-price').value) || 0;
+            const d = parseFloat(card.querySelector('.d-disc').value) || 0;
+            
+            const discAmt = p * (d / 100);
+            const netPrice = p - discAmt;
+
+            // Per-item indicators
+            const netSpan = card.querySelector('.net-val');
+            const diffSpan = card.querySelector('.diff-val');
+
+            if (p > 0) {
+                netSpan.innerText = `Net: ₹${netPrice.toLocaleString('en-IN')}`;
+                diffSpan.innerText = d > 0 ? `Saved: ₹${discAmt.toLocaleString('en-IN')}` : "";
+            } else {
+                netSpan.innerText = ""; diffSpan.innerText = "";
+            }
+
+            // Year Filtering
+            if(!dt || dt.startsWith(year)) {
+                totalINR += netPrice;
+                totalGram += g;
+                card.style.display = "grid";
+            } else {
+                card.style.display = "none";
+            }
+        });
+
+        document.getElementById('totalGram').innerText = `${totalGram.toLocaleString('en-IN')}g`;
+        document.getElementById('totalINR').innerText = `₹${totalINR.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        document.getElementById('totalUSD').innerText = `$${(totalINR * LIVE_RATE).toLocaleString('en-US', {minimumFractionDigits: 2})} USD`;
+    }
+
+    function save() {
+        const list = [];
+        document.querySelectorAll('.item-card').forEach(c => {
+            list.push({
+                date: c.querySelector('.d-date').value,
+                item: c.querySelector('.d-item').value,
+                gram: c.querySelector('.d-gram').value,
+                price: c.querySelector('.d-price').value,
+                disc: c.querySelector('.d-disc').value,
+                file: c.querySelector('.d-file').value
+            });
+        });
+        localStorage.setItem(DB_KEY, JSON.stringify(list));
+    }
+
+    async function exportData() {
+        const data = localStorage.getItem(DB_KEY);
+        const year = document.getElementById('yearFilter').value;
+        if ('showSaveFilePicker' in window) {
+            try {
+                const h = await window.showSaveFilePicker({ suggestedName: `MyExpenses_${year}.json` });
+                const w = await h.createWritable();
+                await w.write(data);
+                await w.close();
+            } catch (err) { }
+        } else {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([data]));
+            a.download = `MyExpenses_${year}.json`;
+            a.click();
+        }
+    }
+
+    function importData(e) {
+        const r = new FileReader();
+        r.onload = () => { localStorage.setItem(DB_KEY, r.result); init(); };
+        r.readAsText(e.target.files[0]);
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
