@@ -36,7 +36,6 @@
         .label-text { font-size: 10px; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;}
         .inr-text { font-size: 1.4rem; font-weight: 800; color: var(--success); display: block; }
         .gram-text { font-size: 1.4rem; font-weight: 800; color: var(--weight); display: block; }
-        .usd-text { font-size: 0.8rem; color: #94a3b8; font-weight: 600; }
 
         .container { max-width: 1200px; margin: 15px auto; padding: 0 12px; }
 
@@ -46,7 +45,6 @@
             background: white; padding: 10px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         select { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 14px; outline: none; }
-        #rateLabel { font-size: 11px; font-weight: 800; color: var(--primary); }
 
         /* ITEM CARDS - RESTORED FIELDS */
         .expense-list { display: flex; flex-direction: column; gap: 12px; }
@@ -99,10 +97,15 @@
         </div>
     </div>
     
-    <div class="total-box">
-        <span class="label-text">TOTAL NET COST</span>
-        <span class="inr-text" id="totalINR">₹0.00</span>
-        <span class="usd-text" id="totalUSD">$0.00 USD</span>
+    <div class="total-box" style="display: flex; gap: 15px; align-items: center;">
+        <div>
+            <span class="label-text">GOLD NET COST</span>
+            <span class="inr-text" id="goldINR">₹0.00</span>
+        </div>
+        <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+            <span class="label-text">SILVER NET COST</span>
+            <span class="inr-text" id="silverINR">₹0.00</span>
+        </div>
     </div>
 </div>
 
@@ -112,7 +115,6 @@
             <label class="label-text" style="color:#64748b">Filter Year</label>
             <select id="yearFilter" onchange="refresh()"></select>
         </div>
-        <div id="rateLabel">Live Rate: Loading...</div>
     </div>
 
     <div id="expenseList" class="expense-list"></div>
@@ -134,19 +136,6 @@
 
 <script>
     const DB_KEY = "Tracker_Final_AllFields_V19";
-    let LIVE_RATE = 0.012; 
-
-    async function getRate() {
-        try {
-            const r = await fetch('https://open.er-api.com/v6/latest/INR');
-            const d = await r.json();
-            if(d?.rates?.USD) {
-                LIVE_RATE = d.rates.USD;
-                document.getElementById('rateLabel').innerText = `1 USD = ₹${(1/LIVE_RATE).toFixed(2)}`;
-                refresh();
-            }
-        } catch(e) { document.getElementById('rateLabel').innerText = "Offline Mode"; }
-    }
 
     // Setup Year Filter
     const yf = document.getElementById('yearFilter');
@@ -162,7 +151,7 @@
         document.getElementById('expenseList').innerHTML = "";
         if(saved.length === 0) addNew();
         else saved.forEach(s => addNew(s));
-        getRate();
+        refresh();
     }
 
     function addNew(data = {}) {
@@ -225,7 +214,8 @@
 
     function refresh() {
         const year = document.getElementById('yearFilter').value;
-        let totalINR = 0;
+        let totalGoldINR = 0;
+        let totalSilverINR = 0;
         let totalGold = 0;
         let totalSilver = 0;
 
@@ -252,7 +242,21 @@
 
             // Year Filtering
             if(!dt || dt.startsWith(year)) {
-                totalINR += netPrice;
+                // Cost distribution logic
+                if (goldGrams > 0 && silverGrams === 0) {
+                    totalGoldINR += netPrice;
+                } else if (silverGrams > 0 && goldGrams === 0) {
+                    totalSilverINR += netPrice;
+                } else if (goldGrams > 0 && silverGrams > 0) {
+                    // Split proportional to approximate relative asset value (Gold is ~80x silver valuation per gram)
+                    const goldRatio = (goldGrams * 80) / ((goldGrams * 80) + silverGrams);
+                    totalGoldINR += netPrice * goldRatio;
+                    totalSilverINR += netPrice * (1 - goldRatio);
+                } else {
+                    // Default fallback if no grams are filled but price exists
+                    totalGoldINR += netPrice;
+                }
+
                 totalGold += goldGrams;
                 totalSilver += silverGrams;
                 card.style.display = "grid";
@@ -263,8 +267,8 @@
 
         document.getElementById('totalGold').innerText = `${totalGold.toLocaleString('en-IN')}g`;
         document.getElementById('totalSilver').innerText = `${totalSilver.toLocaleString('en-IN')}g`;
-        document.getElementById('totalINR').innerText = `₹${totalINR.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-        document.getElementById('totalUSD').innerText = `$${(totalINR * LIVE_RATE).toLocaleString('en-US', {minimumFractionDigits: 2})} USD`;
+        document.getElementById('goldINR').innerText = `₹${totalGoldINR.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        document.getElementById('silverINR').innerText = `₹${totalSilverINR.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
     }
 
     function save() {
