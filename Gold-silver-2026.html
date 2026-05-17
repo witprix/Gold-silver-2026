@@ -80,7 +80,7 @@
 
         /* Desktop Layout - All fields in one row */
         @media (min-width: 850px) {
-            .item-card { grid-template-columns: 1.2fr 2fr 0.8fr 1.2fr 1.2fr 1.5fr; align-items: start; }
+            .item-card { grid-template-columns: 1.2fr 2fr 0.8fr 0.8fr 1.2fr 1.2fr 1.5fr; align-items: start; }
             .full-width { grid-column: auto; }
         }
     </style>
@@ -88,9 +88,15 @@
 <body>
 
 <div class="top-dash">
-    <div class="total-box left-align">
-        <span class="label-text">TOTAL GRAMS</span>
-        <span class="gram-text" id="totalGram">0g</span>
+    <div class="total-box left-align" style="display: flex; gap: 15px; align-items: center;">
+        <div>
+            <span class="label-text">TOTAL GOLD</span>
+            <span class="gram-text" id="totalGold" style="color: var(--accent);">0g</span>
+        </div>
+        <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+            <span class="label-text">TOTAL SILVER</span>
+            <span class="gram-text" id="totalSilver" style="color: #cbd5e1;">0g</span>
+        </div>
     </div>
     
     <div class="total-box">
@@ -172,8 +178,12 @@
                 <input type="text" class="d-item" value="${data.item || ''}" placeholder="Item details..." oninput="save();">
             </div>
             <div>
-                <label>Gram (g)</label>
-                <input type="number" class="d-gram" value="${data.gram || ''}" placeholder="0" oninput="refresh(); save();">
+                <label>Gold (g)</label>
+                <input type="number" class="d-gold" value="${data.gold || ''}" placeholder="0" oninput="refresh(); save();">
+            </div>
+            <div>
+                <label>Silver (g)</label>
+                <input type="number" class="d-silver" value="${data.silver || ''}" placeholder="0" oninput="refresh(); save();">
             </div>
             <div>
                 <label>Actual Price (₹)</label>
@@ -216,11 +226,13 @@
     function refresh() {
         const year = document.getElementById('yearFilter').value;
         let totalINR = 0;
-        let totalGram = 0;
+        let totalGold = 0;
+        let totalSilver = 0;
 
         document.querySelectorAll('.item-card').forEach(card => {
             const dt = card.querySelector('.d-date').value;
-            const g = parseFloat(card.querySelector('.d-gram').value) || 0;
+            const goldGrams = parseFloat(card.querySelector('.d-gold').value) || 0;
+            const silverGrams = parseFloat(card.querySelector('.d-silver').value) || 0;
             const p = parseFloat(card.querySelector('.d-price').value) || 0;
             const d = parseFloat(card.querySelector('.d-disc').value) || 0;
             
@@ -241,14 +253,16 @@
             // Year Filtering
             if(!dt || dt.startsWith(year)) {
                 totalINR += netPrice;
-                totalGram += g;
+                totalGold += goldGrams;
+                totalSilver += silverGrams;
                 card.style.display = "grid";
             } else {
                 card.style.display = "none";
             }
         });
 
-        document.getElementById('totalGram').innerText = `${totalGram.toLocaleString('en-IN')}g`;
+        document.getElementById('totalGold').innerText = `${totalGold.toLocaleString('en-IN')}g`;
+        document.getElementById('totalSilver').innerText = `${totalSilver.toLocaleString('en-IN')}g`;
         document.getElementById('totalINR').innerText = `₹${totalINR.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
         document.getElementById('totalUSD').innerText = `$${(totalINR * LIVE_RATE).toLocaleString('en-US', {minimumFractionDigits: 2})} USD`;
     }
@@ -259,7 +273,8 @@
             list.push({
                 date: c.querySelector('.d-date').value,
                 item: c.querySelector('.d-item').value,
-                gram: c.querySelector('.d-gram').value,
+                gold: c.querySelector('.d-gold').value,
+                silver: c.querySelector('.d-silver').value,
                 price: c.querySelector('.d-price').value,
                 disc: c.querySelector('.d-disc').value,
                 file: c.querySelector('.d-file').value
