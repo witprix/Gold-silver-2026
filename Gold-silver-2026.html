@@ -22,20 +22,23 @@
             color: #1e293b;
         }
 
-        /* STICKY TOP DASHBOARD */
+        /* STICKY TOP DASHBOARD - OPTIMIZED FOR MOBILE ALIGNMENT */
         .top-dash {
             position: sticky; top: 0; z-index: 100;
             background: var(--secondary); color: white;
-            padding: 12px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
         }
         
-        .total-box { text-align: right; }
-        .total-box.left-align { text-align: left; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 20px; }
+        .total-box { display: flex; gap: 12px; align-items: center; }
+        .total-box.left-align { border-right: none; padding-right: 0; }
         
-        .label-text { font-size: 10px; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;}
-        .inr-text { font-size: 1.4rem; font-weight: 800; color: var(--success); display: block; }
-        .gram-text { font-size: 1.4rem; font-weight: 800; color: var(--weight); display: block; }
+        /* Inner divider handling */
+        .dash-divider { border-left: 1px solid rgba(255,255,255,0.2); padding-left: 12px; }
+        
+        .label-text { font-size: 9px; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;}
+        .inr-text { font-size: 1.2rem; font-weight: 800; color: var(--success); display: block; }
+        .gram-text { font-size: 1.2rem; font-weight: 800; color: var(--weight); display: block; }
 
         .container { max-width: 1200px; margin: 15px auto; padding: 0 12px; }
 
@@ -76,8 +79,12 @@
         .btn-main { background: var(--primary); color: white; padding: 12px 28px; border-radius: 50px; flex-direction: row; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         .view-link { background: var(--accent); color: white; padding: 8px; border-radius: 8px; text-align: center; font-size: 11px; font-weight: 800; cursor: pointer; margin-top: 5px; display: block; text-decoration: none; }
 
-        /* Desktop Layout - All fields in one row */
+        /* Desktop Layout Styles */
         @media (min-width: 850px) {
+            .top-dash { padding: 12px 20px; }
+            .label-text { font-size: 10px; }
+            .inr-text { font-size: 1.4rem; }
+            .gram-text { font-size: 1.4rem; }
             .item-card { grid-template-columns: 1.2fr 2fr 0.8fr 0.8fr 1.2fr 1.2fr 1.5fr; align-items: start; }
             .full-width { grid-column: auto; }
         }
@@ -86,23 +93,23 @@
 <body>
 
 <div class="top-dash">
-    <div class="total-box left-align" style="display: flex; gap: 15px; align-items: center;">
+    <div class="total-box left-align">
         <div>
             <span class="label-text">TOTAL GOLD</span>
             <span class="gram-text" id="totalGold" style="color: var(--accent);">0g</span>
         </div>
-        <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+        <div class="dash-divider">
             <span class="label-text">TOTAL SILVER</span>
             <span class="gram-text" id="totalSilver" style="color: #cbd5e1;">0g</span>
         </div>
     </div>
     
-    <div class="total-box" style="display: flex; gap: 15px; align-items: center;">
+    <div class="total-box">
         <div>
             <span class="label-text">GOLD NET COST</span>
             <span class="inr-text" id="goldINR">₹0.00</span>
         </div>
-        <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+        <div class="dash-divider">
             <span class="label-text">SILVER NET COST</span>
             <span class="inr-text" id="silverINR">₹0.00</span>
         </div>
